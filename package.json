@@ -1,0 +1,22 @@
+{
+  "name": "riskrank",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "bin": {
+    "riskrank": "./bin/cli.js"
+  },
+  "dependencies": {
+    "commander": "^14.0.3",
+    "groq-sdk": "^0.37.0",
+    "ora": "^9.3.0",
+    "picocolors": "^1.1.1"
+  }
+}

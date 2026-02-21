@@ -1,0 +1,48 @@
+# dependencies
+node_modules/
+
+# env variables
+.env
+.env.* 
+
+# template env file
+!.env.example
+
+
+# debug / logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+logs/
+*.log
+
+# cache / temp
+.tmp/
+.temp/
+dist/
+build/
+coverage/
+.cache/
+.db/
+
+# macOS
+.DS_Store
+
+# Linux
+*~
+
+# Windows
+Thumbs.db
+
+# editors
+.vscode/
+.idea/
+*.swp
+*.swo
+
+.pids
+*.pid
+*.seed
+
+*.tsbuildinfo
