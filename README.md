@@ -69,6 +69,47 @@ riskrank scan /path/to/my-codebase
 ### CLI Options
 - `-k, --key <key>`: Explicitly provide a Groq API Key (overrides the `.env` file).
 - `-m, --model <model>`: Specify a different Groq model (defaults to `llama-3.3-70b-versatile`).
+- `-c, --ci`: Run in non-interactive CI/CD mode (disables prompts).
+- `-f, --fail-on <severity>`: Force exit code `1` if vulnerabilities matching or exceeding this severity are found (choices: `critical`, `high`, `medium`, `low`).
+
+---
+
+## 🚀 Usage in CI/CD (GitHub Actions)
+
+RiskRank is designed to easily integrate into CI/CD pipelines to block vulnerable code from being merged.
+
+1. Ensure the `GROQ_API_KEY` is added to your repository's secrets.
+2. Add the following file to your repository at `.github/workflows/riskrank.yml`:
+
+```yaml
+name: RiskRank Security Scan
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  sast_scan:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+      
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          
+      - name: Install Semgrep
+        run: python3 -m pip install semgrep
+
+      - name: Run RiskRank CI
+        run: npx riskrank scan . --ci --fail-on high
+        env:
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+```
 
 ---
 

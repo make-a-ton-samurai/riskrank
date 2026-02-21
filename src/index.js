@@ -49,21 +49,56 @@ export async function runScanner(targetDir, options) {
 
     printResults(prioritizedResults, semgrepResults);
 
-    // If MONGODB_URI is provided, ask the user before pushing to the Cloud
+    // If MONGODB_URI is provided, handle cloud upload
     const mongoUri = process.env.MONGODB_URI;
     if (mongoUri) {
-        const rl = readline.createInterface({
-            input: process.stdin,
-            output: process.stdout
-        });
-        const ask = query => new Promise(resolve => rl.question(query, resolve));
-        const answer = await ask(pc.cyan('\nUpload findings to the Cloud? (y/N) '));
-        rl.close();
-
-        if (answer.trim().toLowerCase() === 'y' || answer.trim().toLowerCase() === 'yes') {
+        if (options.ci) {
+            console.log(pc.cyan('\n[CI Mode] Automatically uploading findings to Cloud...'));
             await saveToDatabase(context, prioritizedResults, semgrepResults, mongoUri);
         } else {
-            console.log(pc.gray('Cloud upload skipped.\n'));
+            const rl = readline.createInterface({
+                input: process.stdin,
+                output: process.stdout
+            });
+            const ask = query => new Promise(resolve => rl.question(query, resolve));
+            const answer = await ask(pc.cyan('\nUpload findings to the Cloud? (y/N) '));
+            rl.close();
+
+            if (answer.trim().toLowerCase() === 'y' || answer.trim().toLowerCase() === 'yes') {
+                await saveToDatabase(context, prioritizedResults, semgrepResults, mongoUri);
+            } else {
+                console.log(pc.gray('Cloud upload skipped.\n'));
+            }
+        }
+    }
+
+    if (options.failOn) {
+        const threshold = options.failOn.toLowerCase();
+        const severityMap = { 'critical': 4, 'high': 3, 'medium': 2, 'low': 1 };
+        const thresholdScore = severityMap[threshold];
+
+        if (!thresholdScore) {
+            console.error(pc.red(`\n✖ Invalid --fail-on severity: ${options.failOn}. Use critical, high, medium, or low.`));
+            process.exit(1);
+        }
+
+        const shouldFail = prioritizedResults.some(r => {
+            const s = (r.severity || '').toLowerCase();
+            // Semgrep uses error, warning, info
+            let mappedScore = 0;
+            if (s === 'critical' || s === 'error') mappedScore = 4;
+            else if (s === 'high') mappedScore = 3;
+            else if (s === 'medium' || s === 'warning') mappedScore = 2;
+            else mappedScore = 1;
+
+            return mappedScore >= thresholdScore;
+        });
+
+        if (shouldFail) {
+            console.error(pc.red(`\n✖ CI Failure: Found vulnerabilities meeting or exceeding severity threshold '${threshold}'.`));
+            process.exit(1);
+        } else {
+            console.log(pc.green(`\n✔ CI Success: No vulnerabilities met the failure threshold.`));
         }
     }
 }

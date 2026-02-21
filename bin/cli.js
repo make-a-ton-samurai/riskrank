@@ -18,6 +18,8 @@ program
   .argument('[directory]', 'directory to scan', '.')
   .option('-k, --key <key>', 'Groq API Key (overrides GROQ_API_KEY env var)')
   .option('-m, --model <model>', 'Groq Model', 'llama-3.3-70b-versatile')
+  .option('-c, --ci', 'Run in CI/CD non-interactive mode')
+  .option('-f, --fail-on <severity>', 'Exit with code 1 if vulnerabilities of this severity or higher are found (critical, high, medium, low)')
   .action(async (directory, options) => {
     try {
       cfonts.say('RISKRANK', {
