@@ -77,7 +77,8 @@ ${JSON.stringify(sanitizedResults, null, 2)}`;
 
     // Merge AI rankings with original findings
     const finalResults = aiRankings.map(ranking => {
-        const originalFinding = sanitizedResults.find(r => r.index === ranking.originalIndex) || {};
+        // Find the matching item in the *original* unfiltered results array, not the sanitized one
+        const originalFinding = results[ranking.originalIndex] || {};
         return {
             ...originalFinding,
             rank: ranking.rank,

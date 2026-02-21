@@ -59,7 +59,7 @@ function getCodeSnippet(filePath, startLine, endLine) {
     }
 }
 
-export function printResults(results) {
+export function printResults(results, rawResults = []) {
     console.log('\n\n');
 
     if (!results || results.length === 0) {
@@ -77,6 +77,10 @@ export function printResults(results) {
         if (sevLower === 'error' || sevLower === 'critical' || sevLower === 'high') {
             sevColor = pc.yellow; // Orange-ish in picocolors
             confDotStr = pc.green('●');
+        } else if (sevLower === 'warning' || sevLower === 'medium') {
+            sevColor = pc.cyan;
+        } else {
+            sevColor = pc.blue;
         }
 
         // Header Border
@@ -143,6 +147,30 @@ export function printResults(results) {
         console.log(sevColor(`└${'─'.repeat(BOX_WIDTH - 2)}┘\n`));
     });
 
+    // --- RAW FINDINGS TABLE ---
+    const tableResults = rawResults.length > 0 ? rawResults : results;
+    console.log(pc.white(pc.bold(`  ALL RAW FINDINGS (${tableResults.length})`)));
+    console.log(pc.dim('  ┌──────┬──────────┬──────────────────────────────────────────────────────────────────────┐'));
+    console.log(pc.dim(`  │ ${pc.white('NO. ')} │ ${pc.white('SEVERITY')} │ ${pc.white('LOCATION / ID')}                                                          │`));
+    console.log(pc.dim('  ├──────┼──────────┼──────────────────────────────────────────────────────────────────────┤'));
+
+    tableResults.forEach((issue, index) => {
+        const rankStr = ((index + 1).toString()).padEnd(4, ' ');
+
+        let sevTag = 'LOW';
+        let sevColor = pc.blue;
+        const sL = (issue.severity || '').toLowerCase();
+        if (sL === 'error' || sL === 'critical' || sL === 'high') { sevTag = 'HIGH'; sevColor = pc.yellow; }
+        else if (sL === 'warning' || sL === 'medium') { sevTag = 'MEDIUM'; sevColor = pc.cyan; }
+
+        const sevStr = sevColor(sevTag.padEnd(8, ' '));
+        const locIdStr = `${issue.path}:${issue.startLine || '?'} (${issue.id || 'Unknown'})`.substring(0, 68).padEnd(68, ' ');
+
+        console.log(`  ${pc.dim('│')} ${pc.white(rankStr)} ${pc.dim('│')} ${sevStr} ${pc.dim('│')} ${pc.gray(locIdStr)} ${pc.dim('│')}`);
+    });
+    console.log(pc.dim('  └──────┴──────────┴──────────────────────────────────────────────────────────────────────┘\n'));
+
+
     console.log(pc.bold(pc.green('✔ Scan & Analysis verified.')));
-    console.log(pc.dim(`Total risks generated: ${results.length}\n`));
+    console.log(pc.dim(`Total risks prioritized: ${results.length} / ${tableResults.length} raw findings\n`));
 }

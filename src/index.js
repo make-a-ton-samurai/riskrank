@@ -46,7 +46,7 @@ export async function runScanner(targetDir, options) {
         prioritizedResults = await fallbackPrioritization(semgrepResults);
     }
 
-    printResults(prioritizedResults);
+    printResults(prioritizedResults, semgrepResults);
 
     // If MONGODB_URI is provided, push the results to Atlas
     const mongoUri = process.env.MONGODB_URI;
