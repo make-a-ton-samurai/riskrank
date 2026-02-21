@@ -3,8 +3,11 @@ import { runSemgrep } from './scanner.js';
 import { analyzeWithAI } from './ai.js';
 import { fallbackPrioritization } from './fallback.js';
 import { printResults } from './formatter.js';
+import { saveToDatabase } from './db.js';
 import pc from 'picocolors';
+import dotenv from 'dotenv';
 
+dotenv.config();
 export async function runScanner(targetDir, options) {
     const apiKey = options.key || process.env.GROQ_API_KEY;
 
@@ -44,4 +47,10 @@ export async function runScanner(targetDir, options) {
     }
 
     printResults(prioritizedResults);
+
+    // If MONGODB_URI is provided, push the results to Atlas
+    const mongoUri = process.env.MONGODB_URI;
+    if (mongoUri) {
+        await saveToDatabase(context, prioritizedResults, mongoUri);
+    }
 }
