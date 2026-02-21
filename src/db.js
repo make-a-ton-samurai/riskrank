@@ -39,7 +39,7 @@ const ScanResult = mongoose.model('ScanResult', scanResultSchema);
 
 export async function saveToDatabase(context, prioritizedResults, rawResults, uri) {
     try {
-        console.log(pc.cyan('\nConnecting to MongoDB Atlas...'));
+        console.log(pc.cyan('\nConnecting to Cloud Database...'));
         await mongoose.connect(uri);
 
         console.log(pc.cyan('Saving scan results to cloud...'));
@@ -65,9 +65,9 @@ export async function saveToDatabase(context, prioritizedResults, rawResults, ur
         });
 
         await scan.save();
-        console.log(pc.green('✔ Scan results successfully saved to MongoDB Atlas!'));
+        console.log(pc.green('✔ Scan results successfully saved to the Cloud!'));
     } catch (error) {
-        console.error(pc.red(`✖ Failed to save results to MongoDB: ${error.message}`));
+        console.error(pc.red(`✖ Failed to save results to the Cloud: ${error.message}`));
     } finally {
         // Always close the connection so the CLI can exit
         if (mongoose.connection.readyState !== 0) {

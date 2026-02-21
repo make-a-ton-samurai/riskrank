@@ -6,6 +6,7 @@ import { printResults } from './formatter.js';
 import { saveToDatabase } from './db.js';
 import pc from 'picocolors';
 import dotenv from 'dotenv';
+import readline from 'readline';
 
 dotenv.config();
 export async function runScanner(targetDir, options) {
@@ -48,9 +49,21 @@ export async function runScanner(targetDir, options) {
 
     printResults(prioritizedResults, semgrepResults);
 
-    // If MONGODB_URI is provided, push the results to Atlas
+    // If MONGODB_URI is provided, ask the user before pushing to the Cloud
     const mongoUri = process.env.MONGODB_URI;
     if (mongoUri) {
-        await saveToDatabase(context, prioritizedResults, semgrepResults, mongoUri);
+        const rl = readline.createInterface({
+            input: process.stdin,
+            output: process.stdout
+        });
+        const ask = query => new Promise(resolve => rl.question(query, resolve));
+        const answer = await ask(pc.cyan('\nUpload findings to the Cloud? (y/N) '));
+        rl.close();
+
+        if (answer.trim().toLowerCase() === 'y' || answer.trim().toLowerCase() === 'yes') {
+            await saveToDatabase(context, prioritizedResults, semgrepResults, mongoUri);
+        } else {
+            console.log(pc.gray('Cloud upload skipped.\n'));
+        }
     }
 }
