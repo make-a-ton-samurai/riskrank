@@ -7,9 +7,13 @@ const scanResultSchema = new mongoose.Schema({
     totalFindings: { type: Number, required: true },
     findings: [{
         id: String,
+        title: String,
         message: String,
         severity: String,
         explanation: String,
+        businessImpact: String,
+        remediation: String,
+        confidence: String,
         snippet: String,
         path: String,
         startLine: Number,

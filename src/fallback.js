@@ -43,9 +43,18 @@ export async function fallbackPrioritization(results) {
     // Take Top 10
     const top10 = scoredResults.slice(0, 10);
 
-    return top10.map((result, index) => ({
-        ...result,
-        rank: index + 1,
-        explanation: result.message // Use the default message for explanation in fallback
-    }));
+    return top10.map((result, index) => {
+        const rawId = result.id || 'Unknown Vulnerability';
+        const title = rawId.split('.').pop().replace(/[-_]/g, ' ').toUpperCase();
+        const severity = (result.severity || '').toLowerCase();
+        return {
+            ...result,
+            rank: index + 1,
+            title: title,
+            explanation: result.message,
+            businessImpact: 'Unmitigated vulnerabilities can lead to system compromise, data breaches, or compliance violations.',
+            remediation: 'Review the vulnerable code snippet and apply standard security patches or input validation.',
+            confidence: (severity === 'error' || severity === 'critical') ? 'High' : 'Medium'
+        };
+    });
 }

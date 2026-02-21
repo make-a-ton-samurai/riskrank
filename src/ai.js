@@ -27,16 +27,20 @@ You will be provided with project context (frameworks, dependencies) and a list 
 Your task:
 1. Filter out noisy, low-impact findings.
 2. Rank the remaining findings. Force-rank the TOP 10 most critical, business-breaking risks.
-3. For each of the Top 10 findings, provide a clear, concise natural language explanation of WHY this is a risk in the context of the code. (e.g., "This unvalidated parameter allows SQL injection").
+3. For each of the Top 10 findings, extract core security concepts to build a premium security report.
 
 OUTPUT FORMAT REQUIRED:
 Respond ONLY with a valid JSON array containing the top 10 findings. Each object in the array must have the following keys:
 - "originalIndex" (number): The index of the finding from the provided input array.
 - "rank" (number): The rank from 1 to 10.
-- "explanation" (string): Your natural language explanation of the business risk.
+- "title" (string): A short, punchy 3-5 word capitalized title for the risk (e.g. "HARDCODED HMAC KEY").
+- "explanation" (string): A concise, 1-2 sentence explanation of why this code specifically is vulnerable.
+- "businessImpact" (string): A 1-2 sentence description of the real-world business risk if exploited.
+- "remediation" (string): A 1-2 sentence instruction on how to fix the code.
+- "confidence" (string): High, Medium, or Low (your confidence that this is a true positive).
 - "severity" (string): Normalized severity: Critical, High, Medium, or Low.
 
-Do not include any markdown formatting like \`\`\`json in your response. Just the raw JSON brackets.`;
+Do not include any markdown formatting like \`\`\`json in your response. Just the raw JSON array.`;
 
     const userPrompt = `Project Context:
 Name: ${context.name || 'Unknown'}
@@ -77,7 +81,11 @@ ${JSON.stringify(sanitizedResults, null, 2)}`;
         return {
             ...originalFinding,
             rank: ranking.rank,
+            title: ranking.title || originalFinding.id,
             explanation: ranking.explanation,
+            businessImpact: ranking.businessImpact || 'Security impact unknown or not evaluated.',
+            remediation: ranking.remediation || 'Review code and apply secure coding practices.',
+            confidence: ranking.confidence || 'Medium',
             severity: ranking.severity
         };
     });

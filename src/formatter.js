@@ -7,16 +7,16 @@ const stripAnsi = (str) => str.replace(/\x1b\[[0-9;]*m/g, '');
 
 function drawLine(text = '', colorFn = pc.white) {
     const rawLength = stripAnsi(text).length;
-    let padding = BOX_WIDTH - rawLength - 4; // 2 for left border, 2 for right
+    let padding = BOX_WIDTH - rawLength - 4;
     if (padding < 0) padding = 0;
 
-    // We only color the borders and let the text retain its own color
-    return `${colorFn(' │ ')} ${text}${' '.repeat(padding)}${colorFn(' │')}`;
+    // Exact screenshot styling: left and right lines colored, inside text uncolored by this fn
+    return `${colorFn('│ ')} ${text}${' '.repeat(padding)} ${colorFn('│')}`;
 }
 
 function wordWrap(text, maxLineLength) {
     const outputLines = [];
-    const hardLines = text.split('\n');
+    const hardLines = (text || '').split('\n');
 
     for (const line of hardLines) {
         const words = line.split(' ');
@@ -42,16 +42,17 @@ function getCodeSnippet(filePath, startLine, endLine) {
         const lines = content.split('\n');
         const end = endLine ? endLine : startLine;
 
-        // Show 1 line before and 1 line after for context
-        const ctxStart = Math.max(0, startLine - 2);
+        // Show context lines just like the screenshot
+        const ctxStart = Math.max(0, startLine - 1);
         const ctxEnd = Math.min(lines.length - 1, end);
 
         return lines.slice(ctxStart, ctxEnd + 1).map((l, i) => {
             const actualLine = ctxStart + i + 1;
             const isTarget = actualLine >= startLine && actualLine <= end;
+            // The screenshot highlights the exact vulnerable code differently, we'll redden it
             const targetColor = isTarget ? pc.red : pc.dim;
-            const prefix = isTarget ? '>>' : '  ';
-            return targetColor(`${prefix} ${actualLine.toString().padEnd(3, ' ')} │ ${l}`);
+            const prefix = isTarget ? '>' : ' ';
+            return targetColor(`${prefix} ${l}`);
         }).join('\n');
     } catch (e) {
         return null; // File unreadable or snippet failed
@@ -67,65 +68,79 @@ export function printResults(results) {
     }
 
     results.forEach((issue, index) => {
-        // Evaluate Severity
-        let sevColor = pc.white;
-        let severityTag = 'UNKNOWN';
-        const sevLower = (issue.severity || '').toLowerCase();
+        // Screenshot uses distinct colors per risk. Orange and Cyan.
 
+        let sevColor = pc.cyan; // default
+        let confDotStr = pc.green('●');
+
+        const sevLower = (issue.severity || '').toLowerCase();
         if (sevLower === 'error' || sevLower === 'critical' || sevLower === 'high') {
-            sevColor = pc.red; severityTag = 'High';
-        } else if (sevLower === 'warning' || sevLower === 'medium') {
-            sevColor = pc.yellow; severityTag = 'Medium';
-        } else {
-            sevColor = pc.blue; severityTag = 'Low';
+            sevColor = pc.yellow; // Orange-ish in picocolors
+            confDotStr = pc.green('●');
         }
 
-        // Header
+        // Header Border
         const rankStr = issue.rank ? ` RISK #${issue.rank} ` : ` RISK `;
         const topPadCount = Math.floor((BOX_WIDTH - rankStr.length - 2) / 2);
-        const topBorder = ` ╭${'─'.repeat(topPadCount)}${rankStr}${'─'.repeat(BOX_WIDTH - topPadCount - rankStr.length - 2)}╮`;
+        const topBorder = `┌${'─'.repeat(topPadCount)}${rankStr}${'─'.repeat(BOX_WIDTH - topPadCount - rankStr.length - 2)}┐`;
 
         console.log(sevColor(topBorder));
         console.log(drawLine('', sevColor));
 
         // Title
-        const titleText = (issue.id || 'Unknown Vulnerability').toUpperCase();
-        console.log(drawLine(pc.bold(sevColor(`  ${titleText}`)), sevColor));
+        const titleText = (issue.title || issue.id || 'UNKNOWN VULNERABILITY').toUpperCase();
+        console.log(drawLine(pc.white(pc.bold(titleText)), sevColor));
         console.log(drawLine('', sevColor));
 
-        // Reason/Explanation
-        console.log(drawLine(pc.dim('   REASON'), sevColor));
-        console.log(drawLine(pc.dim('   ──────────────────────────────────────────────────'), sevColor));
+        // Block formatting helper matching the screenshot exact style
+        const printBlock = (heading, bodyText, dividerLen) => {
+            console.log(drawLine(pc.white(heading), sevColor));
+            console.log(drawLine(pc.dim('─'.repeat(dividerLen)), sevColor));
+            const wrapped = wordWrap(bodyText, BOX_WIDTH - 8);
+            wrapped.forEach(line => {
+                console.log(drawLine(pc.white(line), sevColor));
+            });
+            console.log(drawLine('', sevColor));
+        };
 
-        const explanationText = issue.explanation || issue.message || 'No description available.';
-        const wrappedExpl = wordWrap(explanationText, BOX_WIDTH - 10);
-        wrappedExpl.forEach(line => {
-            console.log(drawLine(`   ${pc.white(line)}`, sevColor));
-        });
-        console.log(drawLine('', sevColor));
+        // Reason
+        printBlock('REASON', issue.explanation || issue.message, 30);
+
+        // Business Impact
+        if (issue.businessImpact) {
+            printBlock('BUSINESS IMPACT', issue.businessImpact, 30);
+        }
+
+        // Remediation
+        if (issue.remediation) {
+            printBlock('REMEDIATION', issue.remediation, 30);
+        }
 
         // Snippet
-        const snippet = getCodeSnippet(issue.path, issue.startLine, issue.endLine);
+        const snippet = getCodeSnippet(issue.path, issue.startLine, issue.endLine) || issue.snippet;
         if (snippet) {
-            console.log(drawLine(pc.dim('   VULNERABLE CODE'), sevColor));
-            console.log(drawLine(pc.dim('   ──────────────────────────────────────────────────'), sevColor));
+            console.log(drawLine(pc.white('VULNERABLE CODE'), sevColor));
+            console.log(drawLine(pc.dim('──────────────────────────────'), sevColor));
             const snipLines = snippet.split('\n');
             snipLines.forEach(sLine => {
-                // Truncate massively long lines so box doesn't break
                 let safeLine = sLine.length > BOX_WIDTH - 10 ? sLine.substring(0, BOX_WIDTH - 15) + '...' : sLine;
-                console.log(drawLine(`   ${safeLine}`, sevColor));
+                console.log(drawLine(safeLine, sevColor));
             });
             console.log(drawLine('', sevColor));
         }
 
-        // Location & Confidence Footer
-        console.log(drawLine(pc.dim(`   ${'─'.repeat(BOX_WIDTH - 12)}`), sevColor));
-        console.log(drawLine(`   ${pc.dim('LOCATION')}     ${pc.cyan(issue.path)}:${pc.cyan(issue.startLine || '?')}`, sevColor));
-        console.log(drawLine(`   ${pc.dim('SEVERITY')}     ${sevColor('●')} ${pc.bold(severityTag)}`, sevColor));
-        console.log(drawLine('', sevColor));
+        // Location & Confidence footer text
+        console.log(drawLine(pc.dim(`─────────────────────────────────────────────────────────────────`), sevColor));
+        const locLabel = pc.gray('LOCATION  ');
+        const locValue = pc.white(`${issue.path}:${issue.startLine || '?'}`);
+        console.log(drawLine(`${locLabel} ${locValue}`, sevColor));
 
-        // Footer
-        console.log(sevColor(` ╰${'─'.repeat(BOX_WIDTH - 2)}╯\n\n`));
+        const confLabel = pc.gray('CONFIDENCE');
+        const confValue = pc.white(`${issue.confidence || 'Medium'}`);
+        console.log(drawLine(`${confLabel} ${confDotStr} ${confValue}`, sevColor));
+
+        // Footer Border
+        console.log(sevColor(`└${'─'.repeat(BOX_WIDTH - 2)}┘\n`));
     });
 
     console.log(pc.bold(pc.green('✔ Scan & Analysis verified.')));
