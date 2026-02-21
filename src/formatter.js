@@ -75,12 +75,12 @@ export function printResults(results, rawResults = []) {
 
         const sevLower = (issue.severity || '').toLowerCase();
         if (sevLower === 'error' || sevLower === 'critical' || sevLower === 'high') {
-            sevColor = pc.yellow; // Orange-ish in picocolors
+            sevColor = pc.red; // High/Critical = Red
             confDotStr = pc.green('●');
         } else if (sevLower === 'warning' || sevLower === 'medium') {
-            sevColor = pc.cyan;
+            sevColor = pc.yellow; // Medium/Warning = Yellow
         } else {
-            sevColor = pc.blue;
+            sevColor = pc.cyan; // Low = Cyan
         }
 
         // Header Border
@@ -148,7 +148,16 @@ export function printResults(results, rawResults = []) {
     });
 
     // --- RAW FINDINGS TABLE (5-COLUMN GRID) ---
-    const tableResults = rawResults.length > 0 ? rawResults : results;
+    const tableResults = rawResults.length > 0 ? [...rawResults] : [...results];
+
+    // Sort table results by severity (Critical/High -> Medium -> Low)
+    const severityScores = { 'critical': 4, 'error': 4, 'high': 3, 'warning': 2, 'medium': 2, 'info': 1, 'low': 1 };
+    tableResults.sort((a, b) => {
+        const scoreA = severityScores[(a.severity || '').toLowerCase()] || 0;
+        const scoreB = severityScores[(b.severity || '').toLowerCase()] || 0;
+        return scoreB - scoreA;
+    });
+
     console.log(pc.bold(pc.green(`\n\n  ▼ ADDITIONAL FINDINGS (${tableResults.length})`)));
 
     // Grid Widths (Total ~ 120 chars)
@@ -188,12 +197,12 @@ export function printResults(results, rawResults = []) {
 
         // Print first row with data
         const firstMsgLine = (msgLines[0] || '').padEnd(wMsg - 2, ' ');
-        console.log(`  ${v} ${pc.white(idStr)} ${v} ${sevStr} ${v} ${pc.white(fileStr)} ${v} ${pc.white(lineStr)} ${v} ${pc.gray(firstMsgLine)} ${v}`);
+        console.log(`  ${v} ${pc.white(idStr)} ${v} ${sevStr} ${v} ${pc.white(fileStr)} ${v} ${pc.white(lineStr)} ${v} ${pc.white(firstMsgLine)} ${v}`);
 
         // Print remaining message lines (wrapping)
         for (let i = 1; i < msgLines.length; i++) {
             const wrappedMsgStr = msgLines[i].padEnd(wMsg - 2, ' ');
-            console.log(`  ${v} ${' '.repeat(wTitle - 2)} ${v} ${' '.repeat(wSev - 2)} ${v} ${' '.repeat(wFile - 2)} ${v} ${' '.repeat(wLine - 2)} ${v} ${pc.gray(wrappedMsgStr)} ${v}`);
+            console.log(`  ${v} ${' '.repeat(wTitle - 2)} ${v} ${' '.repeat(wSev - 2)} ${v} ${' '.repeat(wFile - 2)} ${v} ${' '.repeat(wLine - 2)} ${v} ${pc.white(wrappedMsgStr)} ${v}`);
         }
 
         // Internal Grid separator
