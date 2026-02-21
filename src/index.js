@@ -51,6 +51,6 @@ export async function runScanner(targetDir, options) {
     // If MONGODB_URI is provided, push the results to Atlas
     const mongoUri = process.env.MONGODB_URI;
     if (mongoUri) {
-        await saveToDatabase(context, prioritizedResults, mongoUri);
+        await saveToDatabase(context, prioritizedResults, semgrepResults, mongoUri);
     }
 }
