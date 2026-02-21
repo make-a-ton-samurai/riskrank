@@ -5,6 +5,9 @@ import { fallbackPrioritization } from './fallback.js';
 import { printResults } from './formatter.js';
 import ora from 'ora';
 import pc from 'picocolors';
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 export async function runScanner(targetDir, options) {
     const apiKey = options.key || process.env.GROQ_API_KEY;

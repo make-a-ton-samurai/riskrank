@@ -11,7 +11,10 @@ export async function extractProjectContext(targetDir) {
     };
 
     try {
-        const pkgPath = path.join(targetDir, 'package.json');
+        // Resolve the target directory fully to prevent traversal tricks
+        const resolvedTargetDir = path.resolve(targetDir);
+        const pkgPath = path.join(resolvedTargetDir, 'package.json');
+
         const pkgData = await fs.readFile(pkgPath, 'utf8');
         const pkg = JSON.parse(pkgData);
 
