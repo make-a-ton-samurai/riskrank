@@ -147,28 +147,62 @@ export function printResults(results, rawResults = []) {
         console.log(sevColor(`└${'─'.repeat(BOX_WIDTH - 2)}┘\n`));
     });
 
-    // --- RAW FINDINGS TABLE ---
+    // --- RAW FINDINGS TABLE (5-COLUMN GRID) ---
     const tableResults = rawResults.length > 0 ? rawResults : results;
-    console.log(pc.white(pc.bold(`  ALL RAW FINDINGS (${tableResults.length})`)));
-    console.log(pc.dim('  ┌──────┬──────────┬──────────────────────────────────────────────────────────────────────┐'));
-    console.log(pc.dim(`  │ ${pc.white('NO. ')} │ ${pc.white('SEVERITY')} │ ${pc.white('LOCATION / ID')}                                                          │`));
-    console.log(pc.dim('  ├──────┼──────────┼──────────────────────────────────────────────────────────────────────┤'));
+    console.log(pc.bold(pc.green(`\n\n  ▼ ADDITIONAL FINDINGS (${tableResults.length})`)));
+
+    // Grid Widths (Total ~ 120 chars)
+    const wTitle = 5;
+    const wSev = 10;
+    const wFile = 35;
+    const wLine = 8;
+    const wMsg = 53;
+
+    // Draw Top Border
+    const tTop = pc.dim(`  ┌${'─'.repeat(wTitle)}┬${'─'.repeat(wSev)}┬${'─'.repeat(wFile)}┬${'─'.repeat(wLine)}┬${'─'.repeat(wMsg)}┐`);
+    const tMid = pc.dim(`  ├${'─'.repeat(wTitle)}┼${'─'.repeat(wSev)}┼${'─'.repeat(wFile)}┼${'─'.repeat(wLine)}┼${'─'.repeat(wMsg)}┤`);
+    const tBot = pc.dim(`  └${'─'.repeat(wTitle)}┴${'─'.repeat(wSev)}┴${'─'.repeat(wFile)}┴${'─'.repeat(wLine)}┴${'─'.repeat(wMsg)}┘`);
+    const v = pc.dim('│');
+
+    console.log(tTop);
+    console.log(`  ${v} ${pc.cyan('#'.padEnd(wTitle - 2))} ${v} ${pc.cyan('Severity'.padEnd(wSev - 2))} ${v} ${pc.cyan('File'.padEnd(wFile - 2))} ${v} ${pc.cyan('Line'.padEnd(wLine - 2))} ${v} ${pc.cyan('Message'.padEnd(wMsg - 2))} ${v}`);
+    console.log(tMid);
 
     tableResults.forEach((issue, index) => {
-        const rankStr = ((index + 1).toString()).padEnd(4, ' ');
+        const idStr = ((index + 1).toString()).padEnd(wTitle - 2, ' ');
 
         let sevTag = 'LOW';
         let sevColor = pc.blue;
         const sL = (issue.severity || '').toLowerCase();
-        if (sL === 'error' || sL === 'critical' || sL === 'high') { sevTag = 'HIGH'; sevColor = pc.yellow; }
-        else if (sL === 'warning' || sL === 'medium') { sevTag = 'MEDIUM'; sevColor = pc.cyan; }
+        if (sL === 'error' || sL === 'critical' || sL === 'high') { sevTag = 'HIGH'; sevColor = pc.red; }
+        else if (sL === 'warning' || sL === 'medium') { sevTag = 'MEDIUM'; sevColor = pc.yellow; }
 
-        const sevStr = sevColor(sevTag.padEnd(8, ' '));
-        const locIdStr = `${issue.path}:${issue.startLine || '?'} (${issue.id || 'Unknown'})`.substring(0, 68).padEnd(68, ' ');
+        const sevStr = sevColor(sevTag.padEnd(wSev - 2, ' '));
 
-        console.log(`  ${pc.dim('│')} ${pc.white(rankStr)} ${pc.dim('│')} ${sevStr} ${pc.dim('│')} ${pc.gray(locIdStr)} ${pc.dim('│')}`);
+        const fileStr = (issue.path || 'Unknown').substring(0, wFile - 2).padEnd(wFile - 2, ' ');
+        const lineStr = (issue.startLine?.toString() || '?').substring(0, wLine - 2).padEnd(wLine - 2, ' ');
+
+        // Wrap message cleanly
+        const rawMsg = issue.message || issue.explanation || 'No message provided';
+        const msgLines = wordWrap(rawMsg, wMsg - 4);
+
+        // Print first row with data
+        const firstMsgLine = (msgLines[0] || '').padEnd(wMsg - 2, ' ');
+        console.log(`  ${v} ${pc.white(idStr)} ${v} ${sevStr} ${v} ${pc.white(fileStr)} ${v} ${pc.white(lineStr)} ${v} ${pc.gray(firstMsgLine)} ${v}`);
+
+        // Print remaining message lines (wrapping)
+        for (let i = 1; i < msgLines.length; i++) {
+            const wrappedMsgStr = msgLines[i].padEnd(wMsg - 2, ' ');
+            console.log(`  ${v} ${' '.repeat(wTitle - 2)} ${v} ${' '.repeat(wSev - 2)} ${v} ${' '.repeat(wFile - 2)} ${v} ${' '.repeat(wLine - 2)} ${v} ${pc.gray(wrappedMsgStr)} ${v}`);
+        }
+
+        // Internal Grid separator
+        if (index < tableResults.length - 1) {
+            console.log(tMid);
+        }
     });
-    console.log(pc.dim('  └──────┴──────────┴──────────────────────────────────────────────────────────────────────┘\n'));
+
+    console.log(tBot);
 
 
     console.log(pc.bold(pc.green('✔ Scan & Analysis verified.')));
