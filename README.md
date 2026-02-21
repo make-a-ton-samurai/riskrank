@@ -72,33 +72,6 @@ riskrank scan /path/to/my-codebase
 
 ---
 
-## Cloud Database Schema
-
-If the `MONGODB_URI` is present, RiskRank interactively asks to dump the results to the cloud. The payload is heavily optimized for rendering on a Web UI Dashboard, utilizing the following Mongoose Schema:
-
-```json
-{
-  "projectName": "String",
-  "repositoryUrl": "String",
-  "branch": "String",
-  "frameworks": ["Array"],
-  "totalPrioritized": "Number",
-  "totalRaw": "Number",
-  "metrics": {
-    "critical": "Number",
-    "high": "Number",
-    "medium": "Number",
-    "low": "Number"
-  },
-  "status": "String (Pending Review | In Progress | Resolved)",
-  "topFindings": ["Array of Ranked Vulnerabilities"],
-  "rawFindings": ["Array of All Unfiltered Semgrep JSON Data"],
-  "createdAt": "Date"
-}
-```
-
----
-
 ## Technologies Used
 
 - **CLI Engine**: `commander`
