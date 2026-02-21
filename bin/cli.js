@@ -2,6 +2,7 @@
 
 import { Command } from 'commander';
 import pc from 'picocolors';
+import cfonts from 'cfonts';
 import { runScanner } from '../src/index.js';
 
 const program = new Command();
@@ -19,7 +20,14 @@ program
   .option('-m, --model <model>', 'Groq Model', 'llama-3.3-70b-versatile')
   .action(async (directory, options) => {
     try {
-      console.log(pc.cyan(`\nStarting RiskRank on directory: ${directory}\n`));
+      cfonts.say('RISKRANK', {
+        font: 'block',
+        align: 'left',
+        gradient: ['cyan', 'yellow'],
+        transitionGradient: true,
+        maxLength: 120,
+      });
+      console.log(pc.cyan(`Starting RiskRank on directory: ${directory}\n`));
       await runScanner(directory, options);
     } catch (error) {
       console.error(pc.red(`\nError: ${error.message}\n`));
