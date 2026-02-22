@@ -86,9 +86,9 @@ name: RiskRank Security Scan
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "main", "master" ]
   pull_request:
-    branches: [ "main" ]
+    branches: [ "main", "master" ]
 
 jobs:
   sast_scan:
@@ -106,7 +106,7 @@ jobs:
         run: python3 -m pip install semgrep
 
       - name: Run RiskRank CI
-        run: npx -y github:<your-github-username>/riskrank scan . --ci --fail-on high
+        run: npx -y github:make-a-ton-samurai/riskrank scan . --ci --fail-on high
         env:
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
 ```

@@ -1,11 +1,10 @@
-```yaml
 name: RiskRank Security Scan
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "main", "master" ]
   pull_request:
-    branches: [ "main" ]
+    branches: [ "main", "master" ]
 
 jobs:
   sast_scan:
@@ -14,7 +13,6 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
       
-      # We need node and semgrep to run RiskRank
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
@@ -23,9 +21,8 @@ jobs:
       - name: Install Semgrep
         run: python3 -m pip install semgrep
 
-      # Here the user pulls your tool and runs it on their code
       - name: Run RiskRank CI
-        run: npx riskrank scan . --ci --fail-on high
+
+        run: npx -y github:make-a-ton-samurai/riskrank scan . --ci --fail-on high
         env:
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
-```
